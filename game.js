@@ -166,15 +166,6 @@ class StockGame {
         document.getElementById('sellBtn').addEventListener('click', () => this.sellStock());
 
         // 설정
-        document.getElementById('initialCapitalSlider').addEventListener('change', (e) => {
-            this.initialCapital = parseInt(e.target.value);
-            this.portfolio = {};
-            this.tradeHistory = [];
-            this.saveGameData();
-            this.updateCapitalDisplay();
-            this.render();
-        });
-
         document.getElementById('clearHistoryBtn').addEventListener('click', () => this.clearHistory());
         document.getElementById('exportDataBtn').addEventListener('click', () => this.exportData());
         document.getElementById('importDataBtn').addEventListener('click', () => {
@@ -621,7 +612,308 @@ class StockGame {
     updateCapitalDisplay() {
         document.getElementById('initialCapitalDisplay').textContent = 
             `₩${this.initialCapital.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
-        document.getElementById('initialCapitalSlider').value = this.initialCapital;
+    }
+
+    renderStockDetail() {
+        if (!this.selectedStock) return;
+
+        const stock = this.stocks.find(s => s.symbol === this.selectedStock);
+        if (!stock) return;
+
+        const container = document.getElementById('stockDetailContainer');
+        if (!container) return;
+
+        const change = stock.priceUSD - stock.previousCloseUSD;
+        const changePercent = (change / stock.previousCloseUSD) * 100;
+        const isPositive = change >= 0;
+        const priceKRW = stock.priceUSD * this.exchangeRate;
+
+        const holding = this.portfolio[stock.symbol];
+        const holdingQty = holding ? holding.quantity : 0;
+
+        container.innerHTML = `
+            <div class="stock-detail">
+                <div class="stock-detail-header">
+                    <button class="btn-back" id="backBtn">← 돌아가기</button>
+                </div>
+                
+                <div class="stock-detail-top">
+                    <div class="stock-detail-info">
+                        <h2>${stock.name}</h2>
+                        <div class="stock-detail-ticker">${stock.symbol}</div>
+                    </div>
+                    <div class="stock-detail-prices">
+                        <div class="price-usd">
+                            <span class="label">USD</span>
+                            <span class="price">$${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="price-krw">
+                            <span class="label">KRW</span>
+                            <span class="price">₩${priceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stock-detail-change">
+                    <span class="change-amount ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}${change.toFixed(2)}</span>
+                    <span class="change-percent ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}${changePercent.toFixed(2)}%</span>
+                </div>
+
+                <div class="stock-detail-content">
+                    <div class="stock-detail-chart">
+                        <canvas id="priceChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="stock-detail-trade">
+                        <div class="trade-panel">
+                            <h3>거래</h3>
+                            <div class="trade-info">
+                                <p><strong>보유량:</strong> ${holdingQty}주</p>
+                                <p><strong>현재가:</strong> $${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}</p>
+                            </div>
+                            <div class="quantity-group">
+                                <label>거래 수량</label>
+                                <div class="quantity-controls">
+                                    <button class="btn-qty" id="detailQtyMinusBtn">−</button>
+                                    <input type="number" id="detailTradeQuantity" min="1" value="1" class="qty-input">
+                                    <button class="btn-qty" id="detailQtyPlusBtn">+</button>
+                                </div>
+                            </div>
+                            <div class="trade-cost">
+                                <span>예상 금액</span>
+                                <span id="detailEstimatedCost">₩0</span>
+                            </div>
+                            <div class="trade-buttons">
+                                <button id="detailBuyBtn" class="btn btn-buy">매수</button>
+                                <button id="detailSellBtn" class="btn btn-sell">매도</button>
+                            </div>
+                            <div id="detailTradeMessage" class="trade-message"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 이벤트 리스너 추가
+        document.getElementById('backBtn').addEventListener('click', () => {
+            this.switchTab('stocks');
+        });
+
+        document.getElementById('detailQtyMinusBtn').addEventListener('click', () => {
+            const input = document.getElementById('detailTradeQuantity');
+            let value = parseInt(input.value) || 1;
+            input.value = Math.max(1, value - 1);
+            this.updateDetailEstimatedCost();
+        });
+
+        document.getElementById('detailQtyPlusBtn').addEventListener('click', () => {
+            const input = document.getElementById('detailTradeQuantity');
+            let value = parseInt(input.value) || 1;
+            input.value = value + 1;
+            this.updateDetailEstimatedCost();
+        });
+
+        document.getElementById('detailTradeQuantity').addEventListener('input', () => this.updateDetailEstimatedCost());
+
+        document.getElementById('detailBuyBtn').addEventListener('click', () => this.buyStockDetail());
+        document.getElementById('detailSellBtn').addEventListener('click', () => this.sellStockDetail());
+
+        this.updateDetailEstimatedCost();
+        this.drawChart(stock);
+    }
+
+    updateDetailEstimatedCost() {
+        const stock = this.stocks.find(s => s.symbol === this.selectedStock);
+        const quantity = parseInt(document.getElementById('detailTradeQuantity')?.value) || 1;
+
+        if (stock) {
+            const costUSD = stock.priceUSD * quantity;
+            const costKRW = costUSD * this.exchangeRate;
+            document.getElementById('detailEstimatedCost').textContent = 
+                `₩${costKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+        }
+    }
+
+    buyStockDetail() {
+        const symbol = this.selectedStock;
+        const quantity = parseInt(document.getElementById('detailTradeQuantity').value) || 1;
+        const stock = this.stocks.find(s => s.symbol === symbol);
+
+        if (!stock || quantity <= 0) {
+            this.showDetailTradeError('올바른 수량을 입력해주세요.');
+            return;
+        }
+
+        const costKRW = stock.priceUSD * quantity * this.exchangeRate;
+        const currentCash = this.getCashBalance();
+
+        if (costKRW > currentCash) {
+            this.showDetailTradeError('보유 자금이 부족합니다.');
+            return;
+        }
+
+        if (!this.portfolio[symbol]) {
+            this.portfolio[symbol] = {
+                quantity: 0,
+                totalCostKRW: 0,
+                name: stock.name,
+                symbol: stock.symbol
+            };
+        }
+
+        const holding = this.portfolio[symbol];
+        holding.quantity += quantity;
+        holding.totalCostKRW += costKRW;
+
+        this.tradeHistory.unshift({
+            type: 'buy',
+            symbol: stock.symbol,
+            name: stock.name,
+            quantity: quantity,
+            priceUSD: stock.priceUSD,
+            costKRW: costKRW,
+            timestamp: new Date().toISOString()
+        });
+
+        this.saveGameData();
+        this.showDetailTradeSuccess(`${quantity}주 매수했습니다.`);
+        this.renderStockDetail();
+        this.render();
+    }
+
+    sellStockDetail() {
+        const symbol = this.selectedStock;
+        const quantity = parseInt(document.getElementById('detailTradeQuantity').value) || 1;
+        const stock = this.stocks.find(s => s.symbol === symbol);
+
+        if (!stock || quantity <= 0) {
+            this.showDetailTradeError('올바른 수량을 입력해주세요.');
+            return;
+        }
+
+        const holding = this.portfolio[symbol];
+        if (!holding || holding.quantity < quantity) {
+            this.showDetailTradeError('보유한 주식이 부족합니다.');
+            return;
+        }
+
+        const avgPriceKRW = holding.totalCostKRW / holding.quantity;
+        const revenueKRW = stock.priceUSD * quantity * this.exchangeRate;
+        const profitKRW = revenueKRW - (avgPriceKRW * quantity);
+
+        holding.quantity -= quantity;
+        holding.totalCostKRW -= avgPriceKRW * quantity;
+
+        if (holding.quantity === 0) {
+            delete this.portfolio[symbol];
+        }
+
+        this.tradeHistory.unshift({
+            type: 'sell',
+            symbol: stock.symbol,
+            name: stock.name,
+            quantity: quantity,
+            priceUSD: stock.priceUSD,
+            revenueKRW: revenueKRW,
+            profitKRW: profitKRW,
+            timestamp: new Date().toISOString()
+        });
+
+        this.saveGameData();
+        this.showDetailTradeSuccess(`${quantity}주 매도했습니다.`);
+        this.renderStockDetail();
+        this.render();
+    }
+
+    drawChart(stock) {
+        setTimeout(() => {
+            const canvas = document.getElementById('priceChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const priceData = this.priceHistory[stock.symbol];
+            if (!priceData) return;
+
+            const prices = priceData.prices;
+            const startPrice = priceData.startPrice;
+            const maxPrice = Math.max(...prices);
+            const minPrice = Math.min(...prices);
+            const range = maxPrice - minPrice || 1;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+            const pointSpacing = (width - padding * 2) / (prices.length - 1 || 1);
+
+            // 배경
+            ctx.fillStyle = '#f9fafb';
+            ctx.fillRect(0, 0, width, height);
+
+            // 그리드
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (i * (height - padding * 2) / 5);
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+
+            // 시작 가격 선
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            const startY = padding + (height - padding * 2) * (maxPrice - startPrice) / range;
+            ctx.beginPath();
+            ctx.moveTo(padding, startY);
+            ctx.lineTo(width - padding, startY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 가격 곡선
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            prices.forEach((price, index) => {
+                const x = padding + (index * pointSpacing);
+                const y = padding + (height - padding * 2) * (maxPrice - price) / range;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            // 축 레이블
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('시간', width / 2, height - 10);
+
+            ctx.textAlign = 'right';
+            ctx.fillText(`$${maxPrice.toFixed(2)}`, padding - 10, padding + 15);
+            ctx.fillText(`$${minPrice.toFixed(2)}`, padding - 10, height - padding + 5);
+        }, 0);
+    }
+
+    showDetailTradeError(message) {
+        const msg = document.getElementById('detailTradeMessage');
+        if (msg) {
+            msg.textContent = message;
+            msg.className = 'trade-message error';
+        }
+    }
+
+    showDetailTradeSuccess(message) {
+        const msg = document.getElementById('detailTradeMessage');
+        if (msg) {
+            msg.textContent = message;
+            msg.className = 'trade-message success';
+        }
     }
 
     showNotification(message, type = 'success') {
