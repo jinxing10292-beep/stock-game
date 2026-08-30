@@ -7,14 +7,16 @@ class StockGame {
         this.stocks = [];
         this.portfolio = {};
         this.tradeHistory = [];
-        this.initialCapital = 1000000;
+        this.initialCapital = 10000000; // 1000만원 고정
         this.exchangeRate = 1381.93;
         this.priceUpdateIntervals = {};
+        this.priceHistory = {}; // 주식별 가격 이력 저장
         
         this.currentTab = 'stocks';
         this.filteredStocks = [];
         this.sortBy = 'name';
         this.searchQuery = '';
+        this.selectedStock = null; // 선택된 주식
         
         this.init();
     }
@@ -81,19 +83,37 @@ class StockGame {
     }
 
     getUpdateInterval(price) {
-        // $250 이상 또는 ₩200,000 이상이면 0.05~0.5초
-        if (price >= 250 || price * this.exchangeRate >= 200000) {
+        // $350 이상 또는 ₩300,000 이상이면 0.05~0.5초
+        if (price >= 350 || price * this.exchangeRate >= 300000) {
             return Math.random() * 450 + 50; // 50~500ms
         }
         return 1000; // 매 초
     }
 
     scheduleStockUpdate(stock, interval) {
+        // 초기 가격 이력 설정
+        if (!this.priceHistory[stock.symbol]) {
+            this.priceHistory[stock.symbol] = {
+                startPrice: stock.priceUSD,
+                prices: [stock.priceUSD],
+                timestamps: [Date.now()]
+            };
+        }
+
         const update = () => {
             if (this.stocks.find(s => s.symbol === stock.symbol)) {
                 const volatility = (Math.random() - 0.5) * 0.006; // ±0.3%
                 stock.priceUSD *= (1 + volatility);
                 stock.priceUSD = Math.round(stock.priceUSD * 100) / 100;
+                
+                // 가격 이력 저장 (최대 60개까지만)
+                if (this.priceHistory[stock.symbol].prices.length >= 60) {
+                    this.priceHistory[stock.symbol].prices.shift();
+                    this.priceHistory[stock.symbol].timestamps.shift();
+                }
+                this.priceHistory[stock.symbol].prices.push(stock.priceUSD);
+                this.priceHistory[stock.symbol].timestamps.push(Date.now());
+                
                 this.render();
             }
 
@@ -197,6 +217,13 @@ class StockGame {
         });
 
         this.renderStocksList();
+    }
+
+    // 주식 상세 페이지 열기
+    openStockDetail(symbol) {
+        this.selectedStock = symbol;
+        this.switchTab('stockDetail');
+        this.renderStockDetail();
     }
 
     openTradeModal(symbol) {
@@ -434,6 +461,8 @@ class StockGame {
             this.renderPortfolio();
         } else if (this.currentTab === 'history') {
             this.renderTradeHistory();
+        } else if (this.currentTab === 'stockDetail') {
+            this.renderStockDetail();
         }
         this.updateCapitalDisplay();
     }
@@ -470,46 +499,44 @@ class StockGame {
         }
 
         this.filteredStocks.forEach(stock => {
-            const card = document.createElement('div');
-            card.className = 'stock-card';
-
             const change = stock.priceUSD - stock.previousCloseUSD;
             const changePercent = (change / stock.previousCloseUSD) * 100;
             const isPositive = change >= 0;
 
             const holding = this.portfolio[stock.symbol];
             const holdingQty = holding ? holding.quantity : 0;
-            const holdingValueKRW = holding ? stock.priceUSD * holding.quantity * this.exchangeRate : 0;
             const priceKRW = stock.priceUSD * this.exchangeRate;
 
-            card.innerHTML = `
-                <div class="stock-header">
-                    <div>
-                        <div class="stock-name">${stock.name}</div>
-                        <div class="stock-symbol">${stock.symbol}</div>
+            const row = document.createElement('div');
+            row.className = 'stock-row';
+            row.innerHTML = `
+                <div class="stock-row-header">
+                    <div class="stock-row-name">
+                        <div class="stock-row-title">${stock.name}</div>
+                        <div class="stock-row-symbol">${stock.symbol}</div>
                     </div>
-                </div>
-                <div class="stock-price">$${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
-                <div style="font-size: 12px; color: var(--neutral-text); margin-bottom: 8px;">
-                    ₩${priceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}
-                </div>
-                <div class="stock-change">
-                    <span class="change-amount">${isPositive ? '+' : ''}${change.toFixed(2)}</span>
-                    <span class="change-percent ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}${changePercent.toFixed(2)}%</span>
-                </div>
-                <div style="font-size: 12px; color: var(--neutral-text); margin-bottom: 12px;">
-                    보유: ${holdingQty}주 / ₩${holdingValueKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}
-                </div>
-                <div class="stock-actions">
-                    <button class="btn-trade">거래</button>
+                    <div class="stock-row-price">
+                        <div class="stock-row-price-usd">$${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                        <div class="stock-row-price-krw">₩${priceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</div>
+                    </div>
+                    <div class="stock-row-change">
+                        <span class="change-amount ${isPositive ? 'positive' : 'negative'}">${isPositive ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}</span>
+                        <span class="change-percent ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}${changePercent.toFixed(2)}%</span>
+                    </div>
+                    <div class="stock-row-holding">
+                        <span class="holding-qty">${holdingQty}주</span>
+                    </div>
+                    <div class="stock-row-action">
+                        <button class="btn-stock-detail">상세</button>
+                    </div>
                 </div>
             `;
 
-            card.querySelector('.btn-trade').addEventListener('click', () => {
-                this.openTradeModal(stock.symbol);
+            row.querySelector('.btn-stock-detail').addEventListener('click', () => {
+                this.openStockDetail(stock.symbol);
             });
 
-            container.appendChild(card);
+            container.appendChild(row);
         });
     }
 
