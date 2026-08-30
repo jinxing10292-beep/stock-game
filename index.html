@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모의 주식 게임</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1>📈 모의 주식 게임</h1>
+            <div class="user-info">
+                <div class="balance-card">
+                    <span class="label">보유 자산</span>
+                    <span class="value" id="totalAssets">₩1,000,000</span>
+                </div>
+                <div class="balance-card">
+                    <span class="label">현금</span>
+                    <span class="value" id="cashBalance">₩1,000,000</span>
+                </div>
+                <div class="balance-card">
+                    <span class="label">수익률</span>
+                    <span class="value" id="profitRate">0%</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="main">
+            <!-- 주식 추가 섹션 -->
+            <section class="add-stock-section">
+                <h2>주식 추가</h2>
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="stockName" 
+                        placeholder="주식 이름 (예: Apple)" 
+                        class="input-field"
+                    >
+                    <input 
+                        type="text" 
+                        id="stockSymbol" 
+                        placeholder="종목코드 (예: AAPL)" 
+                        class="input-field"
+                    >
+                    <input 
+                        type="number" 
+                        id="stockPrice" 
+                        placeholder="현재가격" 
+                        min="0" 
+                        step="0.01"
+                        class="input-field"
+                    >
+                    <button id="addStockBtn" class="btn btn-primary">주식 추가</button>
+                </div>
+                <div id="errorMessage" class="error-message"></div>
+            </section>
+
+            <!-- 주식 목록 섹션 -->
+            <section class="stocks-section">
+                <h2>주식 목록</h2>
+                <div id="stocksList" class="stocks-grid">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </section>
+        </main>
+
+        <!-- 포트폴리오 섹션 -->
+        <section class="portfolio-section">
+            <h2>📊 포트폴리오</h2>
+            <div id="portfolio" class="portfolio-grid">
+                <!-- 동적으로 생성됨 -->
+            </div>
+        </section>
+
+        <!-- 게임 리셋 섹션 -->
+        <footer class="footer">
+            <button id="resetGameBtn" class="btn btn-danger">게임 리셋</button>
+        </footer>
+    </div>
+
+    <!-- 거래 모달 -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">주식 거래</h3>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info">
+                    <p><strong>종목:</strong> <span id="modalStockName"></span></p>
+                    <p><strong>현재가:</strong> <span id="modalCurrentPrice"></span></p>
+                    <p><strong>보유량:</strong> <span id="modalHoldingQty"></span></p>
+                </div>
+                <div class="trade-buttons">
+                    <div class="quantity-input">
+                        <label>수량:</label>
+                        <input type="number" id="tradeQuantity" min="1" value="1" class="input-field">
+                    </div>
+                    <button id="buyBtn" class="btn btn-buy">매수</button>
+                    <button id="sellBtn" class="btn btn-sell">매도</button>
+                </div>
+                <div id="tradeMessage" class="trade-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
