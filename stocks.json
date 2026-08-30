@@ -1,0 +1,58 @@
+[
+  {
+    "symbol": "AAPL",
+    "name": "Apple",
+    "price": 220.50,
+    "previousClose": 218.75,
+    "currency": "USD"
+  },
+  {
+    "symbol": "MSFT",
+    "name": "Microsoft",
+    "price": 380.25,
+    "previousClose": 378.50,
+    "currency": "USD"
+  },
+  {
+    "symbol": "GOOGL",
+    "name": "Alphabet",
+    "price": 142.80,
+    "previousClose": 140.65,
+    "currency": "USD"
+  },
+  {
+    "symbol": "AMZN",
+    "name": "Amazon",
+    "price": 185.45,
+    "previousClose": 183.20,
+    "currency": "USD"
+  },
+  {
+    "symbol": "NVDA",
+    "name": "NVIDIA",
+    "price": 875.30,
+    "previousClose": 868.90,
+    "currency": "USD"
+  },
+  {
+    "symbol": "TSLA",
+    "name": "Tesla",
+    "price": 242.15,
+    "previousClose": 238.65,
+    "currency": "USD"
+  },
+  {
+    "symbol": "META",
+    "name": "Meta",
+    "price": 485.50,
+    "previousClose": 482.10,
+    "currency": "USD"
+  },
+  {
+    "symbol": "NFLX",
+    "name": "Netflix",
+    "price": 580.20,
+    "previousClose": 575.80,
+    "currency": "USD"
+  }
+]
