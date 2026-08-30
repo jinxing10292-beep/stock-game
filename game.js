@@ -84,11 +84,8 @@ class StockGame {
     }
 
     getUpdateInterval(price) {
-        // $350 이상 또는 ₩300,000 이상이면 0.05~1초
-        if (price >= 350 || price * this.exchangeRate >= 300000) {
-            return Math.random() * 950 + 50; // 50~1000ms
-        }
-        return 1000; // 매 초
+        // 모든 주식 1초마다 변동
+        return 1000; // 1초
     }
 
     scheduleStockUpdate(stock, interval) {
@@ -220,10 +217,18 @@ class StockGame {
 
     // 주식 상세 페이지 열기
     openStockDetail(symbol) {
-        this.selectedStock = symbol;
-        const modal = document.getElementById('stockDetailModal');
-        modal.classList.add('show');
-        this.renderStockDetail();
+        try {
+            this.selectedStock = symbol;
+            const modal = document.getElementById('stockDetailModal');
+            if (!modal) {
+                console.error('Modal not found');
+                return;
+            }
+            modal.classList.add('show');
+            this.renderStockDetail();
+        } catch (error) {
+            console.error('Error opening stock detail:', error);
+        }
     }
 
     openTradeModal(symbol) {
@@ -627,13 +632,20 @@ class StockGame {
     }
 
     renderStockDetail() {
-        if (!this.selectedStock) return;
+        try {
+            if (!this.selectedStock) return;
 
-        const stock = this.stocks.find(s => s.symbol === this.selectedStock);
-        if (!stock) return;
+            const stock = this.stocks.find(s => s.symbol === this.selectedStock);
+            if (!stock) {
+                console.error('Stock not found:', this.selectedStock);
+                return;
+            }
 
-        const container = document.getElementById('stockDetailContainer');
-        if (!container) return;
+            const container = document.getElementById('stockDetailContainer');
+            if (!container) {
+                console.error('Container not found');
+                return;
+            }
 
         const change = stock.priceUSD - stock.previousCloseUSD;
         const changePercent = (change / stock.previousCloseUSD) * 100;
@@ -731,6 +743,9 @@ class StockGame {
 
         this.updateDetailEstimatedCost();
         this.drawChart(stock);
+        } catch (error) {
+            console.error('Error rendering stock detail:', error);
+        }
     }
 
     updateDetailEstimatedCost() {

@@ -1,5 +1,180 @@
 [
   {
+    "symbol": "005930",
+    "name": "삼성전자",
+    "priceUSD": 193.64,
+    "previousCloseUSD": 193.64,
+    "currency": "USD"
+  },
+  {
+    "symbol": "000660",
+    "name": "SK하이닉스",
+    "priceUSD": 119.77,
+    "previousCloseUSD": 119.77,
+    "currency": "USD"
+  },
+  {
+    "symbol": "373220",
+    "name": "LG에너지솔루션",
+    "priceUSD": 268.59,
+    "previousCloseUSD": 268.59,
+    "currency": "USD"
+  },
+  {
+    "symbol": "005380",
+    "name": "현대차",
+    "priceUSD": 288.25,
+    "previousCloseUSD": 288.25,
+    "currency": "USD"
+  },
+  {
+    "symbol": "009150",
+    "name": "삼성전기",
+    "priceUSD": 1029.18,
+    "previousCloseUSD": 1029.18,
+    "currency": "USD"
+  },
+  {
+    "symbol": "207940",
+    "name": "삼성바이오로직스",
+    "priceUSD": 1076.50,
+    "previousCloseUSD": 1076.50,
+    "currency": "USD"
+  },
+  {
+    "symbol": "066570",
+    "name": "LG전자",
+    "priceUSD": 146.09,
+    "previousCloseUSD": 146.09,
+    "currency": "USD"
+  },
+  {
+    "symbol": "068270",
+    "name": "셀트리온",
+    "priceUSD": 138.24,
+    "previousCloseUSD": 138.24,
+    "currency": "USD"
+  },
+  {
+    "symbol": "267260",
+    "name": "HD현대일렉트릭",
+    "priceUSD": 589.81,
+    "previousCloseUSD": 589.81,
+    "currency": "USD"
+  },
+  {
+    "symbol": "034020",
+    "name": "두산에너빌리티",
+    "priceUSD": 63.92,
+    "previousCloseUSD": 63.92,
+    "currency": "USD"
+  },
+  {
+    "symbol": "010120",
+    "name": "LS ELECTRIC",
+    "priceUSD": 155.36,
+    "previousCloseUSD": 155.36,
+    "currency": "USD"
+  },
+  {
+    "symbol": "051900",
+    "name": "LG생활건강",
+    "priceUSD": 230.51,
+    "previousCloseUSD": 230.51,
+    "currency": "USD"
+  },
+  {
+    "symbol": "011070",
+    "name": "LG이노텍",
+    "priceUSD": 442.90,
+    "previousCloseUSD": 442.90,
+    "currency": "USD"
+  },
+  {
+    "symbol": "006800",
+    "name": "미래에셋증권",
+    "priceUSD": 26.20,
+    "previousCloseUSD": 26.20,
+    "currency": "USD"
+  },
+  {
+    "symbol": "007070",
+    "name": "GS리테일",
+    "priceUSD": 19.32,
+    "previousCloseUSD": 19.32,
+    "currency": "USD"
+  },
+  {
+    "symbol": "001040",
+    "name": "CJ",
+    "priceUSD": 94.55,
+    "previousCloseUSD": 94.55,
+    "currency": "USD"
+  },
+  {
+    "symbol": "030530",
+    "name": "원익홀딩스",
+    "priceUSD": 13.83,
+    "previousCloseUSD": 13.83,
+    "currency": "USD"
+  },
+  {
+    "symbol": "000500",
+    "name": "가온전선",
+    "priceUSD": 147.84,
+    "previousCloseUSD": 147.84,
+    "currency": "USD"
+  },
+  {
+    "symbol": "240810",
+    "name": "원익IPS",
+    "priceUSD": 80.54,
+    "previousCloseUSD": 80.54,
+    "currency": "USD"
+  },
+  {
+    "symbol": "047810",
+    "name": "한국항공우주",
+    "priceUSD": 96.52,
+    "previousCloseUSD": 96.52,
+    "currency": "USD"
+  },
+  {
+    "symbol": "098460",
+    "name": "고영",
+    "priceUSD": 20.80,
+    "previousCloseUSD": 20.80,
+    "currency": "USD"
+  },
+  {
+    "symbol": "181710",
+    "name": "NHN",
+    "priceUSD": 50.51,
+    "previousCloseUSD": 50.51,
+    "currency": "USD"
+  },
+  {
+    "symbol": "356860",
+    "name": "티엘비",
+    "priceUSD": 28.68,
+    "previousCloseUSD": 28.68,
+    "currency": "USD"
+  },
+  {
+    "symbol": "131970",
+    "name": "두산테스나",
+    "priceUSD": 59.23,
+    "previousCloseUSD": 59.23,
+    "currency": "USD"
+  },
+  {
+    "symbol": "042700",
+    "name": "한미반도체",
+    "priceUSD": 32.15,
+    "previousCloseUSD": 32.15,
+    "currency": "USD"
+  },
+  {
     "symbol": "AAPL",
     "name": "Apple",
     "priceUSD": 319.70,
