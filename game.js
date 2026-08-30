@@ -1,6 +1,5 @@
 /**
- * 모의 주식 게임
- * JSON 기반 주식 관리, 로컬 스토리지 데이터 저장
+ * 모의 주식 게임 - 실시간 환율 및 주식 가격 변동
  */
 
 class StockGame {
@@ -9,12 +8,14 @@ class StockGame {
         this.portfolio = {};
         this.tradeHistory = [];
         this.initialCapital = 1000000;
+        this.exchangeRate = 1381.93;
+        this.priceUpdateIntervals = {};
         
         this.currentTab = 'stocks';
         this.filteredStocks = [];
         this.sortBy = 'name';
         this.searchQuery = '';
-
+        
         this.init();
     }
 
@@ -22,10 +23,10 @@ class StockGame {
         await this.loadStocks();
         this.loadGameData();
         this.attachEventListeners();
+        this.startPriceUpdates();
         this.render();
     }
 
-    // 주식 데이터 로드
     async loadStocks() {
         try {
             const response = await fetch('stocks.json');
@@ -37,7 +38,6 @@ class StockGame {
         }
     }
 
-    // 로컬 스토리지에서 게임 데이터 로드
     loadGameData() {
         const saved = localStorage.getItem('stockGameData');
         if (saved) {
@@ -50,7 +50,6 @@ class StockGame {
         }
     }
 
-    // 로컬 스토리지에 게임 데이터 저장
     saveGameData() {
         const data = {
             portfolio: this.portfolio,
@@ -60,7 +59,57 @@ class StockGame {
         localStorage.setItem('stockGameData', JSON.stringify(data));
     }
 
-    // 이벤트 리스너 설정
+    // 환율 변동 시작
+    startExchangeRateUpdates() {
+        setInterval(() => {
+            const volatility = (Math.random() - 0.5) * 0.001; // ±0.05%
+            this.exchangeRate *= (1 + volatility);
+            if (Math.abs(volatility) > 0.00001) {
+                document.getElementById('exchangeRateDisplay').textContent = 
+                    `₩${this.exchangeRate.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}`;
+            }
+        }, 1000);
+    }
+
+    // 주식 가격 업데이트 시작
+    startPriceUpdates() {
+        this.startExchangeRateUpdates();
+        this.stocks.forEach(stock => {
+            const updateInterval = this.getUpdateInterval(stock.priceUSD);
+            this.scheduleStockUpdate(stock, updateInterval);
+        });
+    }
+
+    getUpdateInterval(price) {
+        // $250 이상 또는 ₩200,000 이상이면 0.05~0.5초
+        if (price >= 250 || price * this.exchangeRate >= 200000) {
+            return Math.random() * 450 + 50; // 50~500ms
+        }
+        return 1000; // 매 초
+    }
+
+    scheduleStockUpdate(stock, interval) {
+        const update = () => {
+            if (this.stocks.find(s => s.symbol === stock.symbol)) {
+                const volatility = (Math.random() - 0.5) * 0.006; // ±0.3%
+                stock.priceUSD *= (1 + volatility);
+                stock.priceUSD = Math.round(stock.priceUSD * 100) / 100;
+                this.render();
+            }
+
+            const nextInterval = this.getUpdateInterval(stock.priceUSD);
+            this.priceUpdateIntervals[stock.symbol] = setTimeout(
+                () => update(),
+                nextInterval
+            );
+        };
+
+        this.priceUpdateIntervals[stock.symbol] = setTimeout(
+            () => update(),
+            interval
+        );
+    }
+
     attachEventListeners() {
         // 탭 네비게이션
         document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -69,9 +118,6 @@ class StockGame {
 
         // 테마 토글
         document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
-
-        // 메뉴 토글
-        document.getElementById('menuToggle').addEventListener('click', () => this.toggleMenu());
 
         // 검색 및 정렬
         document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -118,29 +164,20 @@ class StockGame {
         document.getElementById('resetGameBtn').addEventListener('click', () => this.resetGame());
     }
 
-    // 탭 전환
     switchTab(tab) {
         this.currentTab = tab;
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
         document.getElementById(`${tab}-tab`).classList.add('active');
     }
 
-    // 테마 토글
     toggleTheme() {
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
         document.getElementById('themeToggle').textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
     }
 
-    // 메뉴 토글 (모바일)
-    toggleMenu() {
-        // 향후 구현
-    }
-
-    // 검색 및 정렬
     filterAndSortStocks() {
         this.filteredStocks = this.stocks.filter(stock => {
             const query = this.searchQuery;
@@ -151,10 +188,10 @@ class StockGame {
             if (this.sortBy === 'name') {
                 return a.name.localeCompare(b.name);
             } else if (this.sortBy === 'price') {
-                return b.price - a.price;
+                return b.priceUSD - a.priceUSD;
             } else if (this.sortBy === 'change') {
-                const changeA = ((a.price - a.previousClose) / a.previousClose) * 100;
-                const changeB = ((b.price - b.previousClose) / b.previousClose) * 100;
+                const changeA = ((a.priceUSD - a.previousCloseUSD) / a.previousCloseUSD) * 100;
+                const changeB = ((b.priceUSD - b.previousCloseUSD) / b.previousCloseUSD) * 100;
                 return changeB - changeA;
             }
         });
@@ -162,7 +199,6 @@ class StockGame {
         this.renderStocksList();
     }
 
-    // 거래 모달 열기
     openTradeModal(symbol) {
         const stock = this.stocks.find(s => s.symbol === symbol);
         if (!stock) return;
@@ -171,11 +207,12 @@ class StockGame {
         document.getElementById('modalTitle').textContent = `${stock.name} 거래`;
         document.getElementById('modalStockName').textContent = `${stock.name} (${stock.symbol})`;
         
-        const price = stock.price.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-        document.getElementById('modalCurrentPrice').textContent = `${price} ${stock.currency}`;
+        const priceKRW = stock.priceUSD * this.exchangeRate;
+        const priceDisplay = `$${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })} (₩${priceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })})`;
+        document.getElementById('modalCurrentPrice').textContent = priceDisplay;
 
-        const change = stock.price - stock.previousClose;
-        const changePercent = (change / stock.previousClose) * 100;
+        const change = stock.priceUSD - stock.previousCloseUSD;
+        const changePercent = (change / stock.previousCloseUSD) * 100;
         const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent.toFixed(2)}%)`;
         document.getElementById('modalChangeRate').textContent = changeText;
 
@@ -192,12 +229,10 @@ class StockGame {
         this.updateEstimatedCost();
     }
 
-    // 거래 모달 닫기
     closeTradeModal() {
         document.getElementById('tradeModal').classList.remove('show');
     }
 
-    // 수량 조정
     adjustQuantity(delta) {
         const input = document.getElementById('tradeQuantity');
         let value = parseInt(input.value) || 1;
@@ -206,20 +241,19 @@ class StockGame {
         this.updateEstimatedCost();
     }
 
-    // 예상 금액 업데이트
     updateEstimatedCost() {
         const symbol = document.getElementById('tradeModal').dataset.currentSymbol;
         const stock = this.stocks.find(s => s.symbol === symbol);
         const quantity = parseInt(document.getElementById('tradeQuantity').value) || 1;
 
         if (stock) {
-            const cost = stock.price * quantity;
+            const costUSD = stock.priceUSD * quantity;
+            const costKRW = costUSD * this.exchangeRate;
             document.getElementById('estimatedCost').textContent = 
-                `${cost.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} ${stock.currency}`;
+                `$${costUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })} (₩${costKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })})`;
         }
     }
 
-    // 매수
     buyStock() {
         const symbol = document.getElementById('tradeModal').dataset.currentSymbol;
         const quantity = parseInt(document.getElementById('tradeQuantity').value) || 1;
@@ -230,39 +264,34 @@ class StockGame {
             return;
         }
 
-        const cost = stock.price * quantity;
+        const costKRW = stock.priceUSD * quantity * this.exchangeRate;
         const currentCash = this.getCashBalance();
 
-        if (cost > currentCash) {
+        if (costKRW > currentCash) {
             this.showTradeError('보유 자금이 부족합니다.');
             return;
         }
 
-        // 포트폴리오 업데이트
         if (!this.portfolio[symbol]) {
             this.portfolio[symbol] = {
                 quantity: 0,
-                totalCost: 0,
+                totalCostKRW: 0,
                 name: stock.name,
                 symbol: stock.symbol
             };
         }
 
         const holding = this.portfolio[symbol];
-        const newQuantity = holding.quantity + quantity;
-        const newTotalCost = holding.totalCost + cost;
+        holding.quantity += quantity;
+        holding.totalCostKRW += costKRW;
 
-        holding.quantity = newQuantity;
-        holding.totalCost = newTotalCost;
-
-        // 거래 기록 추가
         this.tradeHistory.unshift({
             type: 'buy',
             symbol: stock.symbol,
             name: stock.name,
             quantity: quantity,
-            price: stock.price,
-            cost: cost,
+            priceUSD: stock.priceUSD,
+            costKRW: costKRW,
             timestamp: new Date().toISOString()
         });
 
@@ -271,7 +300,6 @@ class StockGame {
         this.render();
     }
 
-    // 매도
     sellStock() {
         const symbol = document.getElementById('tradeModal').dataset.currentSymbol;
         const quantity = parseInt(document.getElementById('tradeQuantity').value) || 1;
@@ -288,25 +316,25 @@ class StockGame {
             return;
         }
 
-        const avgPrice = holding.totalCost / holding.quantity;
-        const revenue = stock.price * quantity;
+        const avgPriceKRW = holding.totalCostKRW / holding.quantity;
+        const revenueKRW = stock.priceUSD * quantity * this.exchangeRate;
+        const profitKRW = revenueKRW - (avgPriceKRW * quantity);
 
         holding.quantity -= quantity;
-        holding.totalCost -= avgPrice * quantity;
+        holding.totalCostKRW -= avgPriceKRW * quantity;
 
         if (holding.quantity === 0) {
             delete this.portfolio[symbol];
         }
 
-        // 거래 기록 추가
         this.tradeHistory.unshift({
             type: 'sell',
             symbol: stock.symbol,
             name: stock.name,
             quantity: quantity,
-            price: stock.price,
-            revenue: revenue,
-            profit: revenue - (avgPrice * quantity),
+            priceUSD: stock.priceUSD,
+            revenueKRW: revenueKRW,
+            profitKRW: profitKRW,
             timestamp: new Date().toISOString()
         });
 
@@ -315,7 +343,6 @@ class StockGame {
         this.render();
     }
 
-    // 거래 기록 삭제
     clearHistory() {
         if (confirm('거래 기록을 모두 삭제하시겠습니까?')) {
             this.tradeHistory = [];
@@ -324,7 +351,6 @@ class StockGame {
         }
     }
 
-    // 데이터 내보내기
     exportData() {
         const data = {
             portfolio: this.portfolio,
@@ -341,7 +367,6 @@ class StockGame {
         link.click();
     }
 
-    // 데이터 가져오기
     importData(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -363,9 +388,8 @@ class StockGame {
         reader.readAsText(file);
     }
 
-    // 게임 초기화
     resetGame() {
-        if (confirm('게임을 초기화하시겠습니까? 모든 데이터가 삭제됩니다.')) {
+        if (confirm('게임을 초기화하시겠습니까?')) {
             this.portfolio = {};
             this.tradeHistory = [];
             this.saveGameData();
@@ -374,48 +398,43 @@ class StockGame {
         }
     }
 
-    // 계산 메서드
     getCashBalance() {
-        let totalInvested = 0;
+        let totalInvestedKRW = 0;
         for (const symbol in this.portfolio) {
-            const holding = this.portfolio[symbol];
-            const stock = this.stocks.find(s => s.symbol === symbol);
-            if (stock) {
-                totalInvested += stock.price * holding.quantity;
-            }
+            totalInvestedKRW += this.portfolio[symbol].totalCostKRW;
         }
-        return this.initialCapital - totalInvested;
+        return this.initialCapital - totalInvestedKRW;
     }
 
     getTotalAssets() {
-        let currentValue = this.getCashBalance();
+        let currentValueKRW = this.getCashBalance();
         for (const symbol in this.portfolio) {
             const holding = this.portfolio[symbol];
             const stock = this.stocks.find(s => s.symbol === symbol);
             if (stock) {
-                currentValue += stock.price * holding.quantity;
+                currentValueKRW += stock.priceUSD * holding.quantity * this.exchangeRate;
             }
         }
-        return currentValue;
+        return currentValueKRW;
     }
 
     getTotalProfit() {
-        const totalAssets = this.getTotalAssets();
-        return totalAssets - this.initialCapital;
+        return this.getTotalAssets() - this.initialCapital;
     }
 
     getTotalProfitRate() {
-        const profit = this.getTotalProfit();
-        const rate = (profit / this.initialCapital) * 100;
-        return rate;
+        return (this.getTotalProfit() / this.initialCapital) * 100;
     }
 
-    // 렌더링
     render() {
         this.renderBalanceInfo();
-        this.renderStocksList();
-        this.renderPortfolio();
-        this.renderTradeHistory();
+        if (this.currentTab === 'stocks') {
+            this.renderStocksList();
+        } else if (this.currentTab === 'portfolio') {
+            this.renderPortfolio();
+        } else if (this.currentTab === 'history') {
+            this.renderTradeHistory();
+        }
         this.updateCapitalDisplay();
     }
 
@@ -428,13 +447,12 @@ class StockGame {
         document.getElementById('cashBalance').textContent = `₩${cash.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
         document.getElementById('totalAssets').textContent = `₩${total.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
         document.getElementById('investedAmount').textContent = `₩${(this.initialCapital - cash).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+        document.getElementById('exchangeRateDisplay').textContent = `₩${this.exchangeRate.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}`;
 
         const totalChangeEl = document.getElementById('totalChange');
         totalChangeEl.textContent = `${profitRate >= 0 ? '+' : ''}${profitRate.toFixed(2)}%`;
-        totalChangeEl.className = profitRate >= 0 ? 'asset-change' : 'asset-change';
         totalChangeEl.style.color = profitRate >= 0 ? '#10b981' : '#ef4444';
 
-        // 포트폴리오 요약
         document.getElementById('totalProfit').textContent = `${profit >= 0 ? '+' : ''}₩${Math.abs(profit).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
         document.getElementById('totalProfit').className = profit >= 0 ? 'value-positive' : 'value-negative';
 
@@ -455,13 +473,14 @@ class StockGame {
             const card = document.createElement('div');
             card.className = 'stock-card';
 
-            const change = stock.price - stock.previousClose;
-            const changePercent = (change / stock.previousClose) * 100;
+            const change = stock.priceUSD - stock.previousCloseUSD;
+            const changePercent = (change / stock.previousCloseUSD) * 100;
             const isPositive = change >= 0;
 
             const holding = this.portfolio[stock.symbol];
             const holdingQty = holding ? holding.quantity : 0;
-            const holdingValue = holding ? stock.price * holding.quantity : 0;
+            const holdingValueKRW = holding ? stock.priceUSD * holding.quantity * this.exchangeRate : 0;
+            const priceKRW = stock.priceUSD * this.exchangeRate;
 
             card.innerHTML = `
                 <div class="stock-header">
@@ -470,13 +489,16 @@ class StockGame {
                         <div class="stock-symbol">${stock.symbol}</div>
                     </div>
                 </div>
-                <div class="stock-price">${stock.price.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} ${stock.currency}</div>
+                <div class="stock-price">$${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                <div style="font-size: 12px; color: var(--neutral-text); margin-bottom: 8px;">
+                    ₩${priceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}
+                </div>
                 <div class="stock-change">
                     <span class="change-amount">${isPositive ? '+' : ''}${change.toFixed(2)}</span>
                     <span class="change-percent ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}${changePercent.toFixed(2)}%</span>
                 </div>
                 <div style="font-size: 12px; color: var(--neutral-text); margin-bottom: 12px;">
-                    보유: ${holdingQty}주 / ₩${holdingValue.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}
+                    보유: ${holdingQty}주 / ₩${holdingValueKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}
                 </div>
                 <div class="stock-actions">
                     <button class="btn-trade">거래</button>
@@ -506,23 +528,23 @@ class StockGame {
             const stock = this.stocks.find(s => s.symbol === symbol);
             if (!stock) return;
 
-            const currentValue = stock.price * holding.quantity;
-            const profit = currentValue - holding.totalCost;
-            const avgPrice = holding.totalCost / holding.quantity;
-            const profitRate = (profit / holding.totalCost) * 100;
+            const currentValueKRW = stock.priceUSD * holding.quantity * this.exchangeRate;
+            const profitKRW = currentValueKRW - holding.totalCostKRW;
+            const avgPriceKRW = holding.totalCostKRW / holding.quantity;
+            const profitRate = (profitKRW / holding.totalCostKRW) * 100;
 
             const item = document.createElement('div');
             item.className = 'portfolio-item';
             item.innerHTML = `
-                <h4>${holding.name} <span class="change-percent ${profit >= 0 ? 'positive' : 'negative'}">${profit >= 0 ? '+' : ''}${profitRate.toFixed(2)}%</span></h4>
+                <h4>${holding.name} <span class="change-percent ${profitKRW >= 0 ? 'positive' : 'negative'}">${profitKRW >= 0 ? '+' : ''}${profitRate.toFixed(2)}%</span></h4>
                 <div class="portfolio-info">
                     <p><strong>종목코드:</strong> ${symbol}</p>
                     <p><strong>보유량:</strong> ${holding.quantity}주</p>
-                    <p><strong>평단가:</strong> ${avgPrice.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} ${stock.currency}</p>
-                    <p><strong>현재가:</strong> ${stock.price.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} ${stock.currency}</p>
-                    <p><strong>투자금:</strong> ${holding.totalCost.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} 원</p>
-                    <p><strong>현재가치:</strong> ${currentValue.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} 원</p>
-                    <p><strong>손익:</strong> <span class="${profit >= 0 ? 'value-positive' : 'value-negative'}">${profit >= 0 ? '+' : ''}${Math.abs(profit).toLocaleString('ko-KR', { maximumFractionDigits: 0 })} 원</span></p>
+                    <p><strong>평단가:</strong> ₩${avgPriceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
+                    <p><strong>현재가:</strong> $${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })} (₩${(stock.priceUSD * this.exchangeRate).toLocaleString('ko-KR', { maximumFractionDigits: 0 })})</p>
+                    <p><strong>투자금:</strong> ₩${holding.totalCostKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
+                    <p><strong>현재가치:</strong> ₩${currentValueKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
+                    <p><strong>손익:</strong> <span class="${profitKRW >= 0 ? 'value-positive' : 'value-negative'}">${profitKRW >= 0 ? '+' : ''}₩${Math.abs(profitKRW).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</span></p>
                 </div>
             `;
             container.appendChild(item);
@@ -548,11 +570,11 @@ class StockGame {
             let amountText = '';
             let typeClass = '';
             if (trade.type === 'buy') {
-                amountText = `-₩${trade.cost.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+                amountText = `-₩${trade.costKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
                 typeClass = 'buy';
             } else {
-                const profitText = trade.profit >= 0 ? '+' : '';
-                amountText = `+₩${trade.revenue.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} (${profitText}${trade.profit.toLocaleString('ko-KR', { maximumFractionDigits: 0 })})`;
+                const profitText = trade.profitKRW >= 0 ? '+' : '';
+                amountText = `+₩${trade.revenueKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} (${profitText}₩${trade.profitKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })})`;
                 typeClass = 'sell';
             }
 
@@ -560,7 +582,7 @@ class StockGame {
                 <span class="trade-type-badge ${typeClass}">${trade.type === 'buy' ? '매수' : '매도'}</span>
                 <div class="trade-details">
                     <div class="trade-symbol">${trade.name} (${trade.symbol})</div>
-                    <div class="trade-timestamp">${dateStr} • ${trade.quantity}주 @ ${trade.price.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}</div>
+                    <div class="trade-timestamp">${dateStr} • ${trade.quantity}주 @ $${trade.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
                 </div>
                 <div class="trade-amount">${amountText}</div>
             `;
@@ -575,7 +597,6 @@ class StockGame {
         document.getElementById('initialCapitalSlider').value = this.initialCapital;
     }
 
-    // 알림 메시지
     showNotification(message, type = 'success') {
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -614,7 +635,6 @@ class StockGame {
 
 // 페이지 로드 시 게임 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    // 저장된 테마 복원
     const theme = localStorage.getItem('theme');
     if (theme === 'dark') {
         document.body.classList.add('dark-mode');

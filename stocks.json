@@ -2,57 +2,176 @@
   {
     "symbol": "AAPL",
     "name": "Apple",
-    "price": 220.50,
-    "previousClose": 218.75,
+    "priceUSD": 319.70,
+    "previousCloseUSD": 319.70,
     "currency": "USD"
   },
   {
     "symbol": "MSFT",
     "name": "Microsoft",
-    "price": 380.25,
-    "previousClose": 378.50,
-    "currency": "USD"
-  },
-  {
-    "symbol": "GOOGL",
-    "name": "Alphabet",
-    "price": 142.80,
-    "previousClose": 140.65,
-    "currency": "USD"
-  },
-  {
-    "symbol": "AMZN",
-    "name": "Amazon",
-    "price": 185.45,
-    "previousClose": 183.20,
+    "priceUSD": 513.53,
+    "previousCloseUSD": 513.53,
     "currency": "USD"
   },
   {
     "symbol": "NVDA",
     "name": "NVIDIA",
-    "price": 875.30,
-    "previousClose": 868.90,
+    "priceUSD": 217.55,
+    "previousCloseUSD": 217.55,
+    "currency": "USD"
+  },
+  {
+    "symbol": "AMZN",
+    "name": "Amazon",
+    "priceUSD": 266.43,
+    "previousCloseUSD": 266.43,
+    "currency": "USD"
+  },
+  {
+    "symbol": "GOOGL",
+    "name": "Alphabet A",
+    "priceUSD": 346.59,
+    "previousCloseUSD": 346.59,
+    "currency": "USD"
+  },
+  {
+    "symbol": "GOOG",
+    "name": "Alphabet C",
+    "priceUSD": 342.88,
+    "previousCloseUSD": 342.88,
+    "currency": "USD"
+  },
+  {
+    "symbol": "META",
+    "name": "Meta Platforms",
+    "priceUSD": 578.02,
+    "previousCloseUSD": 578.02,
     "currency": "USD"
   },
   {
     "symbol": "TSLA",
     "name": "Tesla",
-    "price": 242.15,
-    "previousClose": 238.65,
+    "priceUSD": 348.75,
+    "previousCloseUSD": 348.75,
     "currency": "USD"
   },
   {
-    "symbol": "META",
-    "name": "Meta",
-    "price": 485.50,
-    "previousClose": 482.10,
+    "symbol": "AVGO",
+    "name": "Broadcom",
+    "priceUSD": 368.79,
+    "previousCloseUSD": 368.79,
+    "currency": "USD"
+  },
+  {
+    "symbol": "AMD",
+    "name": "AMD",
+    "priceUSD": 465.58,
+    "previousCloseUSD": 465.58,
     "currency": "USD"
   },
   {
     "symbol": "NFLX",
     "name": "Netflix",
-    "price": 580.20,
-    "previousClose": 575.80,
+    "priceUSD": 81.72,
+    "previousCloseUSD": 81.72,
+    "currency": "USD"
+  },
+  {
+    "symbol": "COST",
+    "name": "Costco",
+    "priceUSD": 945.47,
+    "previousCloseUSD": 945.47,
+    "currency": "USD"
+  },
+  {
+    "symbol": "JPM",
+    "name": "JPMorgan Chase",
+    "priceUSD": 357.62,
+    "previousCloseUSD": 357.62,
+    "currency": "USD"
+  },
+  {
+    "symbol": "V",
+    "name": "Visa",
+    "priceUSD": 381.60,
+    "previousCloseUSD": 381.60,
+    "currency": "USD"
+  },
+  {
+    "symbol": "HD",
+    "name": "Home Depot",
+    "priceUSD": 330.19,
+    "previousCloseUSD": 330.19,
+    "currency": "USD"
+  },
+  {
+    "symbol": "KO",
+    "name": "Coca-Cola",
+    "priceUSD": 89.66,
+    "previousCloseUSD": 89.66,
+    "currency": "USD"
+  },
+  {
+    "symbol": "PG",
+    "name": "Procter & Gamble",
+    "priceUSD": 143.78,
+    "previousCloseUSD": 143.78,
+    "currency": "USD"
+  },
+  {
+    "symbol": "WMT",
+    "name": "Walmart",
+    "priceUSD": 103.09,
+    "previousCloseUSD": 103.09,
+    "currency": "USD"
+  },
+  {
+    "symbol": "CRM",
+    "name": "Salesforce",
+    "priceUSD": 256.00,
+    "previousCloseUSD": 256.00,
+    "currency": "USD"
+  },
+  {
+    "symbol": "PLTR",
+    "name": "Palantir Technologies",
+    "priceUSD": 186.29,
+    "previousCloseUSD": 186.29,
+    "currency": "USD"
+  },
+  {
+    "symbol": "QCOM",
+    "name": "Qualcomm",
+    "priceUSD": 164.19,
+    "previousCloseUSD": 164.19,
+    "currency": "USD"
+  },
+  {
+    "symbol": "INTC",
+    "name": "Intel",
+    "priceUSD": 89.47,
+    "previousCloseUSD": 89.47,
+    "currency": "USD"
+  },
+  {
+    "symbol": "C",
+    "name": "Citigroup",
+    "priceUSD": 132.90,
+    "previousCloseUSD": 132.90,
+    "currency": "USD"
+  },
+  {
+    "symbol": "VST",
+    "name": "Vistra",
+    "priceUSD": 137.09,
+    "previousCloseUSD": 137.09,
+    "currency": "USD"
+  },
+  {
+    "symbol": "GPC",
+    "name": "Genuine Parts",
+    "priceUSD": 137.51,
+    "previousCloseUSD": 137.51,
     "currency": "USD"
   }
 ]
