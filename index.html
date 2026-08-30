@@ -77,13 +77,6 @@
                 </div>
             </section>
 
-            <!-- 주식 상세 섹션 -->
-            <section class="tab-content" id="stockDetail-tab">
-                <div id="stockDetailContainer">
-                    <!-- 동적으로 생성됨 -->
-                </div>
-            </section>
-
             <!-- 포트폴리오 섹션 -->
             <section class="tab-content" id="portfolio-tab">
                 <div class="portfolio-header">
@@ -141,6 +134,16 @@
 
         <!-- 숨겨진 파일 입력 -->
         <input type="file" id="fileInput" accept=".json" style="display: none;">
+    </div>
+
+    <!-- 주식 상세 모달 -->
+    <div id="stockDetailModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content stock-detail-modal">
+            <div id="stockDetailContainer">
+                <!-- 동적으로 생성됨 -->
+            </div>
+        </div>
     </div>
 
     <!-- 거래 모달 -->

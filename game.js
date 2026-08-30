@@ -83,9 +83,9 @@ class StockGame {
     }
 
     getUpdateInterval(price) {
-        // $350 이상 또는 ₩300,000 이상이면 0.05~0.5초
+        // $350 이상 또는 ₩300,000 이상이면 0.05~1초
         if (price >= 350 || price * this.exchangeRate >= 300000) {
-            return Math.random() * 450 + 50; // 50~500ms
+            return Math.random() * 950 + 50; // 50~1000ms
         }
         return 1000; // 매 초
     }
@@ -156,6 +156,13 @@ class StockGame {
             if (e.target === document.getElementById('tradeModal')) this.closeTradeModal();
         });
 
+        // 상세 모달 제어
+        document.getElementById('stockDetailModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('stockDetailModal') || e.target.classList.contains('modal-overlay')) {
+                document.getElementById('stockDetailModal').classList.remove('show');
+            }
+        });
+
         // 거래 수량 제어
         document.getElementById('qtyMinusBtn').addEventListener('click', () => this.adjustQuantity(-1));
         document.getElementById('qtyPlusBtn').addEventListener('click', () => this.adjustQuantity(1));
@@ -213,7 +220,8 @@ class StockGame {
     // 주식 상세 페이지 열기
     openStockDetail(symbol) {
         this.selectedStock = symbol;
-        this.switchTab('stockDetail');
+        const modal = document.getElementById('stockDetailModal');
+        modal.classList.add('show');
         this.renderStockDetail();
     }
 
@@ -452,8 +460,6 @@ class StockGame {
             this.renderPortfolio();
         } else if (this.currentTab === 'history') {
             this.renderTradeHistory();
-        } else if (this.currentTab === 'stockDetail') {
-            this.renderStockDetail();
         }
         this.updateCapitalDisplay();
     }
@@ -547,9 +553,12 @@ class StockGame {
             if (!stock) return;
 
             const currentValueKRW = stock.priceUSD * holding.quantity * this.exchangeRate;
+            const currentValueUSD = stock.priceUSD * holding.quantity;
             const profitKRW = currentValueKRW - holding.totalCostKRW;
             const avgPriceKRW = holding.totalCostKRW / holding.quantity;
+            const avgPriceUSD = avgPriceKRW / this.exchangeRate;
             const profitRate = (profitKRW / holding.totalCostKRW) * 100;
+            const investedUSD = holding.totalCostKRW / this.exchangeRate;
 
             const item = document.createElement('div');
             item.className = 'portfolio-item';
@@ -558,10 +567,10 @@ class StockGame {
                 <div class="portfolio-info">
                     <p><strong>종목코드:</strong> ${symbol}</p>
                     <p><strong>보유량:</strong> ${holding.quantity}주</p>
-                    <p><strong>평단가:</strong> ₩${avgPriceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
+                    <p><strong>평단가:</strong> $${avgPriceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })} / ₩${avgPriceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
                     <p><strong>현재가:</strong> $${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })} (₩${(stock.priceUSD * this.exchangeRate).toLocaleString('ko-KR', { maximumFractionDigits: 0 })})</p>
-                    <p><strong>투자금:</strong> ₩${holding.totalCostKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
-                    <p><strong>현재가치:</strong> ₩${currentValueKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
+                    <p><strong>투자금:</strong> $${investedUSD.toLocaleString('en-US', { maximumFractionDigits: 0 })} / ₩${holding.totalCostKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
+                    <p><strong>현재가치:</strong> $${currentValueUSD.toLocaleString('en-US', { maximumFractionDigits: 0 })} / ₩${currentValueKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
                     <p><strong>손익:</strong> <span class="${profitKRW >= 0 ? 'value-positive' : 'value-negative'}">${profitKRW >= 0 ? '+' : ''}₩${Math.abs(profitKRW).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</span></p>
                 </div>
             `;
@@ -661,7 +670,7 @@ class StockGame {
 
                 <div class="stock-detail-content">
                     <div class="stock-detail-chart">
-                        <canvas id="priceChart" width="400" height="200"></canvas>
+                        <canvas id="priceChart" width="600" height="280"></canvas>
                     </div>
                     <div class="stock-detail-trade">
                         <div class="trade-panel">
@@ -695,7 +704,7 @@ class StockGame {
 
         // 이벤트 리스너 추가
         document.getElementById('backBtn').addEventListener('click', () => {
-            this.switchTab('stocks');
+            document.getElementById('stockDetailModal').classList.remove('show');
         });
 
         document.getElementById('detailQtyMinusBtn').addEventListener('click', () => {
@@ -825,13 +834,15 @@ class StockGame {
     }
 
     drawChart(stock) {
-        setTimeout(() => {
+        // DOM이 렌더링될 때까지 대기
+        requestAnimationFrame(() => {
             const canvas = document.getElementById('priceChart');
             if (!canvas) return;
 
             const ctx = canvas.getContext('2d');
             const priceData = this.priceHistory[stock.symbol];
-            if (!priceData) return;
+            
+            if (!priceData || priceData.prices.length === 0) return;
 
             const prices = priceData.prices;
             const startPrice = priceData.startPrice;
@@ -839,16 +850,22 @@ class StockGame {
             const minPrice = Math.min(...prices);
             const range = maxPrice - minPrice || 1;
 
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
             const width = canvas.width;
             const height = canvas.height;
             const padding = 40;
-            const pointSpacing = (width - padding * 2) / (prices.length - 1 || 1);
+
+            // 실제 포인트 간격
+            const pointSpacing = prices.length > 1 ? (width - padding * 2) / (prices.length - 1) : 0;
 
             // 배경
             ctx.fillStyle = '#f9fafb';
             ctx.fillRect(0, 0, width, height);
 
-            // 그리드
+            // 그리드 라인
             ctx.strokeStyle = '#e5e7eb';
             ctx.lineWidth = 1;
             for (let i = 0; i <= 5; i++) {
@@ -859,7 +876,7 @@ class StockGame {
                 ctx.stroke();
             }
 
-            // 시작 가격 선
+            // 시작 가격 선 (기준선)
             ctx.strokeStyle = '#d1d5db';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
@@ -870,9 +887,11 @@ class StockGame {
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 가격 곡선
+            // 가격 곡선 그리기
             ctx.strokeStyle = '#2563eb';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.beginPath();
 
             prices.forEach((price, index) => {
@@ -888,16 +907,35 @@ class StockGame {
 
             ctx.stroke();
 
+            // 현재가 포인트 표시
+            if (prices.length > 0) {
+                const lastPrice = prices[prices.length - 1];
+                const lastX = padding + ((prices.length - 1) * pointSpacing);
+                const lastY = padding + (height - padding * 2) * (maxPrice - lastPrice) / range;
+
+                ctx.fillStyle = '#2563eb';
+                ctx.beginPath();
+                ctx.arc(lastX, lastY, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
             // 축 레이블
             ctx.fillStyle = '#6b7280';
-            ctx.font = '12px sans-serif';
+            ctx.font = 'bold 12px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('시간', width / 2, height - 10);
+            ctx.fillText('시간 흐름 →', width / 2, height - 10);
 
             ctx.textAlign = 'right';
-            ctx.fillText(`$${maxPrice.toFixed(2)}`, padding - 10, padding + 15);
-            ctx.fillText(`$${minPrice.toFixed(2)}`, padding - 10, height - padding + 5);
-        }, 0);
+            ctx.font = '11px sans-serif';
+            ctx.fillText(`$${maxPrice.toFixed(2)}`, padding - 5, padding + 10);
+            ctx.fillText(`$${minPrice.toFixed(2)}`, padding - 5, height - padding + 10);
+
+            // 기준선 레이블
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`기준: $${startPrice.toFixed(2)}`, padding + 5, startY - 5);
+        });
     }
 
     showDetailTradeError(message) {

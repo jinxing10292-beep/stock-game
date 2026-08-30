@@ -501,11 +501,16 @@ body.dark-mode {
     border: 1px solid var(--neutral-border);
     border-radius: var(--radius-lg);
     padding: 16px;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stock-detail-chart canvas {
     width: 100%;
-    height: 250px;
+    height: 280px;
+    max-width: 100%;
 }
 
 .stock-detail-trade {
@@ -803,6 +808,13 @@ body.dark-mode {
     z-index: 10;
     animation: slideUp 0.3s ease;
     box-shadow: var(--shadow-lg);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.stock-detail-modal {
+    max-width: 100%;
+    border-radius: var(--radius-lg);
 }
 
 @keyframes slideUp {
