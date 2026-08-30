@@ -264,6 +264,36 @@ body.dark-mode {
 .filter-controls {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.stock-type-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.stock-type-btn {
+    padding: 8px 14px;
+    background: var(--neutral-bg);
+    color: var(--neutral-text);
+    border: 1px solid var(--neutral-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.stock-type-btn:hover {
+    background: var(--neutral-border);
+    color: var(--neutral-dark);
+}
+
+.stock-type-btn.active {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+    color: white;
+    border-color: var(--primary-color);
 }
 
 .sort-select {
@@ -274,6 +304,17 @@ body.dark-mode {
     color: var(--neutral-dark);
     cursor: pointer;
     font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.sort-select:hover {
+    border-color: var(--primary-color);
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* 주식 리스트 */

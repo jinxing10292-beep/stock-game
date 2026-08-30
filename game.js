@@ -17,6 +17,8 @@ class StockGame {
         this.sortBy = 'name';
         this.searchQuery = '';
         this.selectedStock = null; // 선택된 주식
+        this.stockTypeFilter = 'all'; // 주식 타입 필터 (all, korean, us)
+        this.detailUpdateInterval = null; // 상세 페이지 업데이트 인터벌
         
         this.init();
     }
@@ -134,6 +136,16 @@ class StockGame {
             btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
         });
 
+        // 주식 타입 필터
+        document.querySelectorAll('.stock-type-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.stock-type-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.stockTypeFilter = e.target.dataset.type;
+                this.filterAndSortStocks();
+            });
+        });
+
         // 테마 토글
         document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
 
@@ -158,6 +170,7 @@ class StockGame {
         document.getElementById('stockDetailModal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('stockDetailModal') || e.target.classList.contains('modal-overlay')) {
                 document.getElementById('stockDetailModal').classList.remove('show');
+                this.stopDetailUpdate();
             }
         });
 
@@ -197,7 +210,15 @@ class StockGame {
     filterAndSortStocks() {
         this.filteredStocks = this.stocks.filter(stock => {
             const query = this.searchQuery;
-            return stock.name.toLowerCase().includes(query) || stock.symbol.toLowerCase().includes(query);
+            const matchesSearch = stock.name.toLowerCase().includes(query) || stock.symbol.toLowerCase().includes(query);
+            
+            if (this.stockTypeFilter === 'all') {
+                return matchesSearch;
+            } else if (this.stockTypeFilter === 'korean') {
+                return matchesSearch && this.isKoreanStock(stock.symbol);
+            } else if (this.stockTypeFilter === 'us') {
+                return matchesSearch && !this.isKoreanStock(stock.symbol);
+            }
         });
 
         this.filteredStocks.sort((a, b) => {
@@ -215,6 +236,12 @@ class StockGame {
         this.renderStocksList();
     }
 
+    // 한국 주식 판단
+    isKoreanStock(symbol) {
+        // 한국 주식은 숫자로만 이루어짐, 미국 주식은 문자로만 이루어짐
+        return /^\d+$/.test(symbol);
+    }
+
     // 주식 상세 페이지 열기
     openStockDetail(symbol) {
         try {
@@ -226,6 +253,9 @@ class StockGame {
             }
             modal.classList.add('show');
             this.renderStockDetail();
+            
+            // 상세 페이지 실시간 업데이트 시작
+            this.startDetailUpdate();
         } catch (error) {
             console.error('Error opening stock detail:', error);
         }
@@ -631,6 +661,65 @@ class StockGame {
             `₩${this.initialCapital.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
     }
 
+    // 상세 페이지 실시간 업데이트 시작
+    startDetailUpdate() {
+        if (this.detailUpdateInterval) {
+            clearInterval(this.detailUpdateInterval);
+        }
+        
+        this.detailUpdateInterval = setInterval(() => {
+            if (this.selectedStock) {
+                this.updateStockDetailUI();
+            }
+        }, 1000);
+    }
+
+    // 상세 페이지 실시간 업데이트 중지
+    stopDetailUpdate() {
+        if (this.detailUpdateInterval) {
+            clearInterval(this.detailUpdateInterval);
+            this.detailUpdateInterval = null;
+        }
+    }
+
+    // 상세 페이지 UI 업데이트 (가격, 그래프만 업데이트)
+    updateStockDetailUI() {
+        const stock = this.stocks.find(s => s.symbol === this.selectedStock);
+        if (!stock) return;
+
+        const change = stock.priceUSD - stock.previousCloseUSD;
+        const changePercent = (change / stock.previousCloseUSD) * 100;
+        const isPositive = change >= 0;
+        const priceKRW = stock.priceUSD * this.exchangeRate;
+
+        // 가격 업데이트
+        const priceUSDEl = document.querySelector('.price-usd .price');
+        const priceKRWEl = document.querySelector('.price-krw .price');
+        const changeAmountEl = document.querySelector('.stock-detail-change .change-amount');
+        const changePercentEl = document.querySelector('.stock-detail-change .change-percent');
+        const modalCurrentPriceEl = document.querySelector('.trade-info p:nth-child(2) strong + *');
+        const estimatedCostEl = document.getElementById('detailEstimatedCost');
+
+        if (priceUSDEl) priceUSDEl.textContent = `$${stock.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+        if (priceKRWEl) priceKRWEl.textContent = `₩${priceKRW.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+        
+        if (changeAmountEl) {
+            changeAmountEl.textContent = `${isPositive ? '+' : ''}${change.toFixed(2)}`;
+            changeAmountEl.className = `change-amount ${isPositive ? 'positive' : 'negative'}`;
+        }
+        
+        if (changePercentEl) {
+            changePercentEl.textContent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
+            changePercentEl.className = `change-percent ${isPositive ? 'positive' : 'negative'}`;
+        }
+
+        // 예상 금액 업데이트
+        this.updateDetailEstimatedCost();
+
+        // 그래프 업데이트
+        this.drawChart(stock);
+    }
+
     renderStockDetail() {
         try {
             if (!this.selectedStock) return;
@@ -719,6 +808,7 @@ class StockGame {
 
         // 이벤트 리스너 추가
         document.getElementById('backBtn').addEventListener('click', () => {
+            this.stopDetailUpdate();
             document.getElementById('stockDetailModal').classList.remove('show');
         });
 
