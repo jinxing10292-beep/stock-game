@@ -46,7 +46,8 @@ class StockGame {
             const data = JSON.parse(saved);
             this.portfolio = data.portfolio || {};
             this.tradeHistory = data.tradeHistory || [];
-            this.initialCapital = data.initialCapital || 1000000;
+            // initialCapital은 항상 10000000으로 고정
+            this.initialCapital = 10000000;
         } else {
             this.saveGameData();
         }
@@ -418,6 +419,8 @@ class StockGame {
         if (confirm('게임을 초기화하시겠습니까?')) {
             this.portfolio = {};
             this.tradeHistory = [];
+            this.initialCapital = 10000000; // 1000만원으로 리셋
+            this.priceHistory = {}; // 가격 이력도 초기화
             this.saveGameData();
             this.render();
             this.showNotification('게임이 초기화되었습니다.', 'success');
