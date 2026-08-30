@@ -6,15 +6,50 @@
     <title>모의 주식 게임</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%232563eb'>📈</text></svg>">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
 </head>
 <body>
-    <div class="app-container">
+    <!-- 로그인/회원가입 화면 -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-container">
+            <div class="auth-box">
+                <h1 class="auth-title">📈 Stock Game</h1>
+                
+                <!-- 로그인 폼 -->
+                <form id="loginForm" class="auth-form active">
+                    <h2>로그인</h2>
+                    <input type="email" id="loginEmail" placeholder="이메일" required>
+                    <input type="password" id="loginPassword" placeholder="비밀번호" required>
+                    <button type="submit" class="btn btn-primary">로그인</button>
+                    <p class="auth-switch">계정이 없으신가요? <a href="#" onclick="switchAuthForm(event)">회원가입</a></p>
+                </form>
+
+                <!-- 회원가입 폼 -->
+                <form id="signupForm" class="auth-form">
+                    <h2>회원가입</h2>
+                    <input type="text" id="signupUsername" placeholder="사용자 이름" required>
+                    <input type="email" id="signupEmail" placeholder="이메일" required>
+                    <input type="password" id="signupPassword" placeholder="비밀번호 (6자 이상)" required minlength="6">
+                    <input type="password" id="signupPasswordConfirm" placeholder="비밀번호 확인" required minlength="6">
+                    <button type="submit" class="btn btn-primary">회원가입</button>
+                    <p class="auth-switch">이미 계정이 있으신가요? <a href="#" onclick="switchAuthForm(event)">로그인</a></p>
+                </form>
+
+                <div id="authMessage" class="auth-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 화면 -->
+    <div id="gameScreen" class="app-container" style="display: none;">
         <!-- 헤더 -->
         <header class="header">
             <div class="header-top">
                 <h1 class="app-title">📈 Stock Game</h1>
                 <div class="header-controls">
                     <button class="btn-theme" id="themeToggle" title="다크모드">🌙</button>
+                    <button class="btn-logout" id="logoutBtn" title="로그아웃">🚪</button>
                     <button class="btn-menu" id="menuToggle" title="메뉴">☰</button>
                 </div>
             </div>
@@ -234,6 +269,7 @@
                 <div id="tradeMessage" class="trade-message"></div>
             </div>
         </div>
+    </div>
     </div>
 
     <script src="game.js"></script>

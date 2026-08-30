@@ -4,6 +4,109 @@
     box-sizing: border-box;
 }
 
+/* 로그인 화면 */
+.auth-screen {
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.auth-box {
+    background: white;
+    border-radius: 12px;
+    padding: 40px 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.auth-title {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 30px;
+    color: #1e293b;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth-form h2 {
+    font-size: 20px;
+    color: #1e293b;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.auth-form input {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.auth-switch {
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.auth-switch a {
+    color: #2563eb;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+.auth-message {
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: center;
+    min-height: 0;
+    display: none;
+}
+
+.auth-message.show {
+    display: block;
+}
+
+.auth-message.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.auth-message.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 :root {
     --primary-color: #2563eb;
     --primary-light: #3b82f6;
