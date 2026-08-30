@@ -19,6 +19,8 @@ class StockGame {
         this.selectedStock = null; // 선택된 주식
         this.stockTypeFilter = 'all'; // 주식 타입 필터 (all, korean, us)
         this.detailUpdateInterval = null; // 상세 페이지 업데이트 인터벌
+        this.deviceId = this.generateDeviceId(); // 기기 고유 ID
+        this.adminUpdateInterval = null; // 어드민 페이지 업데이트 인터벌
         
         this.init();
     }
@@ -29,6 +31,16 @@ class StockGame {
         this.attachEventListeners();
         this.startPriceUpdates();
         this.render();
+    }
+
+    // 기기 고유 ID 생성 (localStorage에 저장)
+    generateDeviceId() {
+        let deviceId = localStorage.getItem('stockGameDeviceId');
+        if (!deviceId) {
+            deviceId = 'device-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+            localStorage.setItem('stockGameDeviceId', deviceId);
+        }
+        return deviceId;
     }
 
     async loadStocks() {
@@ -62,6 +74,28 @@ class StockGame {
             initialCapital: this.initialCapital
         };
         localStorage.setItem('stockGameData', JSON.stringify(data));
+        
+        // 어드민용: 모든 기기의 거래 정보를 별도로 저장
+        this.saveAdminTradeData({
+            deviceId: this.deviceId,
+            timestamp: new Date().toISOString(),
+            type: 'update',
+            tradeHistory: this.tradeHistory,
+            cash: this.getCashBalance()
+        });
+    }
+
+    // 어드민용 거래 데이터 저장
+    saveAdminTradeData(tradeData) {
+        let allTrades = JSON.parse(localStorage.getItem('stockGameAdminTrades') || '[]');
+        allTrades.push(tradeData);
+        
+        // 최근 1000개만 유지 (메모리 절약)
+        if (allTrades.length > 1000) {
+            allTrades = allTrades.slice(-1000);
+        }
+        
+        localStorage.setItem('stockGameAdminTrades', JSON.stringify(allTrades));
     }
 
     // 환율 변동 시작
@@ -86,8 +120,11 @@ class StockGame {
     }
 
     getUpdateInterval(price) {
-        // 모든 주식 1초마다 변동
-        return 1000; // 1초
+        // $350 이상 또는 ₩300,000 이상이면 0.1~0.9초
+        if (price >= 350 || price * this.exchangeRate >= 300000) {
+            return Math.random() * 800 + 100; // 100~900ms
+        }
+        return 1000; // 매 초
     }
 
     scheduleStockUpdate(stock, interval) {
@@ -144,6 +181,47 @@ class StockGame {
                 this.stockTypeFilter = e.target.dataset.type;
                 this.filterAndSortStocks();
             });
+        });
+
+        // 어드민 버튼
+        document.getElementById('adminBtn').addEventListener('click', () => {
+            this.showAdminPassword();
+        });
+
+        // 어드민 비밀번호 확인
+        document.getElementById('adminPasswordBtn')?.addEventListener('click', () => {
+            this.checkAdminPassword();
+        });
+
+        document.getElementById('adminPassword')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.checkAdminPassword();
+            }
+        });
+
+        // 어드민 비밀번호 취소
+        document.getElementById('adminPasswordCancelBtn')?.addEventListener('click', () => {
+            document.getElementById('adminModal').classList.remove('show');
+            document.getElementById('adminPassword').value = '';
+        });
+
+        // 어드민 모달 닫기
+        document.getElementById('closeAdminBtn')?.addEventListener('click', () => {
+            document.getElementById('adminModal').classList.remove('show');
+            if (this.adminUpdateInterval) {
+                clearInterval(this.adminUpdateInterval);
+                this.adminUpdateInterval = null;
+            }
+        });
+
+        document.getElementById('adminModal')?.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                document.getElementById('adminModal').classList.remove('show');
+                if (this.adminUpdateInterval) {
+                    clearInterval(this.adminUpdateInterval);
+                    this.adminUpdateInterval = null;
+                }
+            }
         });
 
         // 테마 토글
@@ -659,6 +737,123 @@ class StockGame {
     updateCapitalDisplay() {
         document.getElementById('initialCapitalDisplay').textContent = 
             `₩${this.initialCapital.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+    }
+
+    // 어드민 비밀번호 화면 표시
+    showAdminPassword() {
+        const modal = document.getElementById('adminModal');
+        if (!modal) return;
+        
+        modal.classList.add('show');
+        document.getElementById('adminPasswordScreen').style.display = 'flex';
+        document.getElementById('adminTradesScreen').style.display = 'none';
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPassword').focus();
+    }
+
+    // 어드민 비밀번호 검증
+    checkAdminPassword() {
+        const password = document.getElementById('adminPassword').value;
+        const correctPassword = '18123';
+
+        if (password === correctPassword) {
+            document.getElementById('adminPasswordScreen').style.display = 'none';
+            document.getElementById('adminTradesScreen').style.display = 'flex';
+            this.showAdminPage();
+        } else {
+            alert('비밀번호가 틀렸습니다.');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('adminPassword').focus();
+        }
+    }
+
+    // 어드민 페이지 표시
+    showAdminPage() {
+        const modal = document.getElementById('adminModal');
+        if (!modal) return;
+        
+        this.updateAdminTradesList();
+        
+        // 매 2초마다 자동 새로고침
+        if (this.adminUpdateInterval) {
+            clearInterval(this.adminUpdateInterval);
+        }
+        
+        this.adminUpdateInterval = setInterval(() => {
+            this.updateAdminTradesList();
+        }, 2000);
+    }
+
+    // 어드민 거래 목록 업데이트
+    updateAdminTradesList() {
+        const adminTradesList = document.getElementById('adminTradesList');
+        if (!adminTradesList) return;
+        
+        const allTrades = JSON.parse(localStorage.getItem('stockGameAdminTrades') || '[]');
+        
+        if (allTrades.length === 0) {
+            adminTradesList.innerHTML = '<div class="admin-empty">아직 거래 기록이 없습니다.</div>';
+            return;
+        }
+
+        // 기기별 가장 최근 데이터만 추출
+        const deviceMap = new Map();
+        allTrades.forEach(trade => {
+            if (!deviceMap.has(trade.deviceId) || new Date(trade.timestamp) > new Date(deviceMap.get(trade.deviceId).timestamp)) {
+                deviceMap.set(trade.deviceId, trade);
+            }
+        });
+
+        let html = '';
+        
+        // 모든 거래 기록을 역순으로 표시
+        const displayTrades = allTrades.slice().reverse();
+        
+        displayTrades.forEach((trade, index) => {
+            if (index >= 50) return; // 최근 50개만 표시
+            
+            const timestamp = new Date(trade.timestamp);
+            const timeStr = timestamp.toLocaleString('ko-KR', {
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            // 해당 거래가 속한 거래 기록 찾기
+            let lastTrade = null;
+            if (trade.tradeHistory && trade.tradeHistory.length > 0) {
+                lastTrade = trade.tradeHistory[0];
+            }
+            
+            if (lastTrade) {
+                const isKorean = this.isKoreanStock(lastTrade.symbol);
+                const price = isKorean ? 
+                    `₩${(lastTrade.priceUSD * this.exchangeRate).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}` :
+                    `$${lastTrade.priceUSD.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+                
+                const action = lastTrade.type === 'buy' ? '매수' : '매도';
+                const actionClass = lastTrade.type === 'buy' ? 'buy' : 'sell';
+                
+                html += `
+                    <div class="admin-trade-item">
+                        <div class="admin-trade-device">${trade.deviceId.substring(0, 15)}</div>
+                        <div class="admin-trade-action ${actionClass}">${action}</div>
+                        <div class="admin-trade-info">
+                            ${lastTrade.symbol} (${lastTrade.name})<br>
+                            ${lastTrade.quantity}주 @ ${price}
+                        </div>
+                        <div class="admin-trade-cash">
+                            💰 ${trade.cash.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}₩<br>
+                            <small style="color: var(--neutral-text);">${timeStr}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        adminTradesList.innerHTML = html || '<div class="admin-empty">거래 기록이 없습니다.</div>';
     }
 
     // 상세 페이지 실시간 업데이트 시작

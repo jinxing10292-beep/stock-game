@@ -317,6 +317,164 @@ body.dark-mode {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+/* 어드민 모달 */
+.admin-modal {
+    max-width: 900px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-screen {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.admin-password-box {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 40px 30px;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-password-box h2 {
+    margin: 0;
+    font-size: 24px;
+    text-align: center;
+}
+
+.admin-password-input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid var(--neutral-border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.2s ease;
+}
+
+.admin-password-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.admin-password-box .btn {
+    width: 100%;
+    max-width: 300px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid var(--neutral-border);
+}
+
+.admin-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--neutral-dark);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--neutral-text);
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+    color: var(--neutral-dark);
+}
+
+.admin-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.admin-trades-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-trade-item {
+    padding: 12px 16px;
+    background: var(--neutral-bg);
+    border: 1px solid var(--neutral-border);
+    border-radius: var(--radius-md);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.admin-trade-device {
+    font-weight: 600;
+    color: var(--primary-color);
+    word-break: break-all;
+}
+
+.admin-trade-action {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    text-align: center;
+}
+
+.admin-trade-action.buy {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.admin-trade-action.sell {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.admin-trade-info {
+    color: var(--neutral-text);
+}
+
+.admin-trade-cash {
+    font-weight: 600;
+    color: var(--neutral-dark);
+    text-align: right;
+}
+
+.admin-empty {
+    text-align: center;
+    color: var(--neutral-text);
+    padding: 40px 20px;
+}
+
+@media (max-width: 768px) {
+    .admin-trade-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .admin-trade-cash {
+        text-align: left;
+    }
+}
+
 /* 주식 리스트 */
 .stocks-list {
     display: flex;
@@ -333,12 +491,11 @@ body.dark-mode {
     padding: 16px;
     border-bottom: 1px solid var(--neutral-border);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease;
 }
 
 .stock-row:hover {
-    background: linear-gradient(90deg, rgba(37, 99, 235, 0.05) 0%, transparent 100%);
-    transform: translateX(4px);
+    background: var(--neutral-bg);
 }
 
 .stock-row:last-child {
